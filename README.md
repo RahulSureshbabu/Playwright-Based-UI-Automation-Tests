@@ -1,27 +1,28 @@
-# UI Testing Project with Playwright
+# UI Testing Project with Playwright and Cucumber
 
 A beginner-friendly UI automation project in this repository.
 
 ## Repository Description
 
-This repository demonstrates a complete, minimal UI test automation workflow using Playwright.
-It includes a simple static web app (`demo-app/`) and an automated test suite (`tests/ui.spec.js`) that validates core user behavior:
+This repository demonstrates a complete, minimal UI test automation workflow using Playwright directly and through Cucumber BDD.
+It includes a simple static web app (`demo-app/`), a Playwright test suite (`tests/ui.spec.js`), and a Cucumber test suite (`features/`) that validate core user behavior:
 
 - page render and heading visibility,
 - guest greeting when input is empty,
 - personalized greeting when a name is provided.
 
-The project is intended for learning, demo, and starter-template use cases where teams need a fast way to understand Playwright setup, local app hosting for tests, and HTML reporting.
+The project is intended for learning, demo, and starter-template use cases where teams need a fast way to understand Playwright setup, Cucumber workflow, local app hosting for tests, and reporting.
 
 This project demonstrates:
 
 - Playwright end-to-end UI testing
+- Cucumber BDD scenarios with Playwright underneath
 - Auto-starting a local static app before tests
 - HTML reporting with Playwright
 
 ---
 
-## Quick Start (4 Commands)
+## Quick Start
 
 Run from repository root:
 
@@ -30,6 +31,12 @@ cd ui-playwright-tests
 npm install
 npx playwright install chromium
 npm run test:ui
+```
+
+Run the Cucumber suite:
+
+```bash
+npm run test:bdd
 ```
 
 After execution, open the HTML report:
@@ -88,7 +95,9 @@ npx playwright install chromium
 
 ---
 
-## 5) Run UI Tests
+## 5) Run Tests
+
+### Playwright test runner
 
 Headless run:
 
@@ -108,6 +117,26 @@ Debug mode:
 npm run test:ui:debug
 ```
 
+### Cucumber BDD suite
+
+Run all Cucumber scenarios:
+
+```bash
+npm run test:bdd
+```
+
+Run smoke scenarios only:
+
+```bash
+npm run test:bdd:smoke
+```
+
+Run regression scenarios excluding `@negative`:
+
+```bash
+npm run test:bdd:regression
+```
+
 ---
 
 ## 6) Reports and Artifacts
@@ -116,6 +145,8 @@ Playwright creates:
 
 - `playwright-report/` → HTML report
 - `test-results/` → traces/screenshots/videos for failed tests
+
+Cucumber in this repo uses console output formats defined in `cucumber.js` (`progress` and `summary`).
 
 Open report:
 
@@ -170,12 +201,16 @@ Install Node.js and restart terminal.
 
 ## 11) How the App Was Tested
 
-Testing was executed with Playwright using the Chromium project configured in `playwright.config.js`.
+Testing was executed in two modes:
+
+1. Direct Playwright execution using the Chromium project configured in `playwright.config.js`.
+2. Cucumber BDD execution using Gherkin feature files and Playwright browser automation underneath.
 
 ### Test approach
 
-- The static app in `demo-app/` is auto-hosted via Playwright `webServer` on port `4173`.
-- Tests are implemented in `tests/ui.spec.js` and run against `http://127.0.0.1:4173`.
+- The static app in `demo-app/` is hosted on port `4173` during test execution.
+- Direct Playwright tests are implemented in `tests/ui.spec.js` and run against `http://127.0.0.1:4173`.
+- Cucumber scenarios are implemented in `features/greeting.feature` and mapped to Playwright-backed step definitions.
 - Assertions cover page render and greeting behavior for both empty and non-empty input.
 
 ### Commands used
@@ -184,6 +219,7 @@ Testing was executed with Playwright using the Chromium project configured in `p
 npm install
 npx playwright install chromium
 npm run test:ui
+npm run test:bdd
 ```
 
 ### Executed checks
@@ -194,9 +230,10 @@ npm run test:ui
 
 ### Evidence and artifacts
 
-- Console list reporter output during execution.
-- HTML report generated in `playwright-report/`.
+- Playwright console list reporter output during execution.
+- Playwright HTML report generated in `playwright-report/`.
 - Retry artifacts (trace, screenshot, video on failure) in `test-results/`.
+- Cucumber console progress and summary output for BDD execution.
 
 ---
 
