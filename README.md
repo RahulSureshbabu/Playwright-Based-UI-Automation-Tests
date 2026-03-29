@@ -44,6 +44,7 @@ npm run report
 
 - `demo-app/` → Static UI used for test automation
 - `tests/` → Playwright test specs
+- `features/` → Cucumber BDD feature files, hooks, and step definitions
 - `playwright.config.js` → Playwright runner configuration
 - `package.json` → Scripts and dependencies
 
@@ -53,6 +54,7 @@ npm run report
 
 - Node.js 20+
 - `@playwright/test`
+- `@cucumber/cucumber`
 - `http-server` to host the demo UI during test execution
 
 ---
@@ -195,3 +197,178 @@ npm run test:ui
 - Console list reporter output during execution.
 - HTML report generated in `playwright-report/`.
 - Retry artifacts (trace, screenshot, video on failure) in `test-results/`.
+
+---
+
+## 12) BDD with Cucumber
+
+This repository also supports BDD-style tests using Cucumber + Playwright.
+
+### Playwright content in this repo
+
+The repository contains both pure Playwright content and Cucumber scenarios that use Playwright underneath.
+
+| Area | Main files | Purpose |
+|---|---|---|
+| Pure Playwright | `playwright.config.js`, `tests/ui.spec.js`, `package.json` scripts like `test:ui` | Run UI tests directly with the Playwright test runner |
+| Cucumber + Playwright | `cucumber.js`, `features/greeting.feature`, `features/step_definitions/greeting.steps.js`, `features/support/hooks.js`, `features/support/world.js` | Write scenarios in Gherkin and execute them through Playwright browser automation |
+
+In other words, Playwright is used in two ways here:
+
+1. As the main test runner for `tests/ui.spec.js`.
+2. As the browser automation engine under the Cucumber BDD layer.
+
+### Cucumber workflow in this repo
+
+The practical workflow is:
+
+1. A tester or BA writes business-readable scenarios in Gherkin in `features/greeting.feature`.
+2. Cucumber reads `cucumber.js` to discover support files and step definitions.
+3. Hooks in `features/support/hooks.js` prepare the browser and app server.
+4. Cucumber matches each `Given`/`When`/`Then` step to a JavaScript function in `features/step_definitions/greeting.steps.js`.
+5. Those step-definition functions use Playwright to interact with the UI and make assertions.
+6. Hooks clean up the browser context after each scenario and close shared resources after the suite.
+
+In short:
+
+`Gherkin scenario` -> `Cucumber step match` -> `step definition` -> `Playwright action/assertion`
+
+```mermaid
+flowchart LR
+	A[Tester writes Gherkin\nfeatures/greeting.feature] --> B[Cucumber reads cucumber.js]
+	B --> C[Load hooks, world,\nand step definitions]
+	C --> D[BeforeAll starts server\nand browser]
+	D --> E[Before creates fresh\ncontext and page]
+	E --> F[Match Given/When/Then\nto greeting.steps.js]
+	F --> G[Playwright interacts\nwith the UI]
+	G --> H[Assertions validate\nexpected result]
+	H --> I[After closes context]
+	I --> J[AfterAll closes browser\nand server]
+```
+
+### How Cucumber is used in this repo
+
+1. Business scenarios are written in Gherkin in `features/greeting.feature`.
+2. Each Gherkin step is implemented in JavaScript step definitions in `features/step_definitions/greeting.steps.js`.
+3. Cucumber hooks in `features/support/hooks.js` manage lifecycle:
+	- ensure the demo app server is available on port `4173`,
+	- launch Playwright Chromium before the suite,
+	- create a fresh browser context/page per scenario,
+	- close context and browser after execution.
+4. Shared scenario state (`page`, `context`, `browser`) is stored in `features/support/world.js`.
+5. Cucumber runtime wiring is defined in `cucumber.js`.
+
+### Scenario traceability
+
+- `TC-001` in feature file verifies heading visibility.
+- `TC-002` in feature file verifies guest greeting for empty input.
+- `TC-003` in feature file verifies personalized greeting for entered name.
+
+These scenario IDs match the documented test cases in `docs/ui-test-cases.md`.
+
+### Execution flow
+
+When you run `npm run test:bdd`, Cucumber executes this sequence:
+
+1. Load support files and step definitions from `cucumber.js`.
+2. Run `BeforeAll` hook to prepare server/browser.
+3. For each scenario, run `Before` hook, scenario steps, then `After` hook.
+4. Run `AfterAll` hook to close remaining resources.
+
+### From Gherkin step to Playwright code
+
+This is the exact lifecycle for one step in this repository:
+
+1. Cucumber reads a step from `features/greeting.feature`, for example:
+
+```gherkin
+When I enter the name "Rahul"
+```
+
+2. Cucumber searches the loaded step-definition files for a matching expression.
+3. It finds this implementation in `features/step_definitions/greeting.steps.js`:
+
+```js
+When("I enter the name {string}", async function (name) {
+	await this.page.locator("#name-input").fill(name);
+});
+```
+
+4. The value `Rahul` is passed into the `name` argument.
+5. `this.page` comes from the Cucumber World created in `features/support/world.js` and initialized in the `Before` hook in `features/support/hooks.js`.
+6. Playwright fills the input field in the browser.
+7. A later `Then` step reads UI output and validates the result with an assertion.
+
+That means Gherkin is the readable specification, but the JavaScript step definition is what makes the scenario executable.
+
+### Roles a tester can play with Cucumber
+
+A tester can contribute at multiple levels depending on technical depth:
+
+1. Specification role: write and review Gherkin scenarios, examples, tags, and acceptance coverage.
+2. Functional test design role: define happy paths, edge cases, negative cases, and traceability to requirements.
+3. Execution and analysis role: run suites, filter by tags, inspect failures, and report defects.
+4. Automation role: write or maintain step definitions, assertions, hooks, and Playwright interactions.
+
+So a tester does not have to only use Gherkin. A non-technical tester may work mostly in feature files, but a technical tester or SDET often writes both Gherkin and the underlying automation code.
+
+### Who writes the underlying code?
+
+Gherkin alone is not executable. Someone must implement the step definitions and automation code.
+
+Common team models are:
+
+1. Manual tester or BA writes Gherkin, and an automation tester/SDET writes the step definitions.
+2. Tester and developer collaborate, with the developer implementing some or all step definitions.
+3. A technical tester owns both the Gherkin and the automation layer.
+
+In this repository, the underlying executable code is mainly:
+
+- `features/step_definitions/greeting.steps.js` for step implementations
+- `features/support/hooks.js` for setup and teardown
+- `features/support/world.js` for shared scenario state
+
+### What a newbie tester should learn first
+
+If you are new to Cucumber, the most useful order is:
+
+1. Learn to write good Gherkin: keep steps clear, behavior-focused, and non-technical.
+2. Learn how step definitions map Gherkin sentences to executable code.
+3. Learn basic Playwright automation so you can understand and eventually maintain the underlying implementation.
+4. Learn hooks, tags, and test data patterns so you can scale scenarios without duplication.
+
+This progression helps you move from specification writing to full test automation without treating Cucumber as only a documentation tool.
+
+### Run BDD suite
+
+```bash
+npm run test:bdd
+```
+
+Run smoke-only BDD scenarios:
+
+```bash
+npm run test:bdd:smoke
+```
+
+Run full regression-tagged BDD scenarios:
+
+```bash
+npm run test:bdd:regression
+```
+
+This regression command runs scenarios tagged `@regression` and excludes scenarios tagged `@negative`.
+
+### BDD structure
+
+- `features/greeting.feature` → business-readable scenarios
+- `features/step_definitions/greeting.steps.js` → step implementations
+- `features/support/hooks.js` → browser/server lifecycle hooks
+- `features/support/world.js` → shared Cucumber world state
+
+### Notes
+
+- Cucumber hooks start the demo app server on port `4173` if it is not already running.
+- Browser automation is performed with Playwright Chromium.
+- Tags are included in `features/greeting.feature` (`@smoke`, `@regression`) for selective execution.
+- The intentional failing demo scenario is tagged `@negative`.

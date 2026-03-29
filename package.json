@@ -7,9 +7,13 @@
     "test:ui": "playwright test",
     "test:ui:headed": "playwright test --headed",
     "test:ui:debug": "playwright test --debug",
+    "test:bdd": "cucumber-js",
+    "test:bdd:smoke": "cucumber-js --tags @smoke",
+    "test:bdd:regression": "cucumber-js --tags \"@regression and not @negative\"",
     "report": "playwright show-report"
   },
   "devDependencies": {
+    "@cucumber/cucumber": "^11.2.0",
     "@playwright/test": "^1.52.0",
     "http-server": "^14.1.1"
   }
