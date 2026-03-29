@@ -22,8 +22,23 @@ Feature: Greeting generation
     And I click the generate greeting button
     Then I should see greeting output "Hello, Rahul!"
 
-  @regression @negative
-  Scenario: TC-004 Intentional failure for demo
+  @regression @db
+  Scenario: TC-004 Personalized greeting is saved to the database
+    Given the greetings table is empty
+    When I enter the name "Alice"
+    And I click the generate greeting button
+    Then I should see greeting output "Hello, Alice!"
+    And the latest greeting in the database should have name "Alice"
+
+  @regression @db
+  Scenario: TC-005 Guest greeting is saved to the database
+    Given the greetings table is empty
+    When I click the generate greeting button
+    Then I should see greeting output "Hello, Guest!"
+    And the latest greeting in the database should be for a guest
+
+  @negative
+  Scenario: TC-N01 Intentional failure for demo
     When I enter the name "Rahul"
     And I click the generate greeting button
     Then I should see greeting output "Hello, RAHUL!"

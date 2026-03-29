@@ -9,7 +9,8 @@ It includes a demo UI (`demo-app/`), a Node API server (`server.js`), a Playwrig
 
 - page render and heading visibility,
 - guest greeting when input is empty,
-- personalized greeting when a name is provided.
+- personalized greeting when a name is provided,
+- API-backed greeting persistence verified against MySQL (TC-004, TC-005).
 
 The project is intended for learning, demo, and starter-template use cases where teams need a fast way to understand Playwright setup, Cucumber workflow, MySQL-backed flows, and reporting.
 
@@ -126,13 +127,19 @@ npm run db:up
 
 ### Playwright test runner
 
-Headless run:
+Headless run (UI tests only):
 
 ```bash
 npm run test:ui
 ```
 
-Run full Playwright suite (UI + DB specs):
+Run MySQL persistence tests (Playwright + DB assertions — TC-004, TC-005):
+
+```bash
+npm run test:ui:db
+```
+
+Run full Playwright suite (UI + DB specs, serial):
 
 ```bash
 npm run test:ui:all
@@ -148,12 +155,6 @@ Debug mode:
 
 ```bash
 npm run test:ui:debug
-```
-
-Run MySQL persistence tests (Playwright + DB assertions):
-
-```bash
-npm run test:ui:db
 ```
 
 ### Cucumber BDD suite
@@ -176,6 +177,18 @@ Run regression scenarios excluding `@negative`:
 
 ```bash
 npm run test:bdd:regression
+```
+
+Run only DB-backed Cucumber scenarios (TC-004, TC-005):
+
+```bash
+npm run test:bdd -- --tags "@db"
+```
+
+Run regression without DB scenarios:
+
+```bash
+npm run test:bdd -- --tags "@regression and not @negative and not @db"
 ```
 
 ---
@@ -201,11 +214,27 @@ npm run report
 
 ## 7) Included Example Test Cases
 
-Current sample suite includes:
+### UI tests (`tests/ui.spec.js`)
 
-1. Verify page heading is visible
-2. Verify empty input returns `Hello, Guest!`
-3. Verify typed input returns personalized greeting
+1. **TC-001** — Verify page heading is visible
+2. **TC-002** — Verify empty input returns `Hello, Guest!`
+3. **TC-003** — Verify typed input returns personalized greeting
+
+### DB-backed Playwright tests (`tests/ui.db.spec.js`)
+
+4. **TC-004** — Verify personalized greeting is saved to MySQL with correct `name_input`, `resolved_name`, and `greeting_text`
+5. **TC-005** — Verify guest greeting is saved to MySQL with `resolved_name = Guest`
+
+### Cucumber scenarios (`features/greeting.feature`)
+
+| Tag | Scenario | Covers |
+|---|---|---|
+| `@smoke @regression` | TC-001 Home page loads with heading | FR-1 |
+| `@smoke @regression` | TC-002 Guest greeting when input is empty | FR-3, FR-4, FR-6, FR-7 |
+| `@regression` | TC-003 Personalized greeting when input has name | FR-2, FR-3, FR-5, FR-6, FR-7 |
+| `@regression @db` | TC-004 Personalized greeting is saved to the database | FR-7, FR-8, FR-9 |
+| `@regression @db` | TC-005 Guest greeting is saved to the database | FR-7, FR-8, FR-9 |
+| `@negative` | TC-N01 Intentional failure for demo | — |
 
 ---
 
@@ -284,9 +313,11 @@ npm run test:bdd
 
 ### Executed checks
 
-1. Home page heading is visible.
-2. Empty name input returns `Hello, Guest!`.
-3. Entered name returns personalized greeting (example: `Hello, Rahul!`).
+1. Home page heading is visible (TC-001).
+2. Empty name input returns `Hello, Guest!` (TC-002).
+3. Entered name returns personalized greeting, e.g. `Hello, Rahul!` (TC-003).
+4. Personalized greeting is saved to MySQL with correct field values (TC-004).
+5. Guest greeting is saved to MySQL with `resolved_name = Guest` (TC-005).
 
 ### Evidence and artifacts
 
@@ -359,11 +390,16 @@ flowchart LR
 
 ### Scenario traceability
 
-- `TC-001` in feature file verifies heading visibility.
-- `TC-002` in feature file verifies guest greeting for empty input.
-- `TC-003` in feature file verifies personalized greeting for entered name.
+| Scenario ID | Feature file scenario | Requirement(s) | Tag(s) |
+|---|---|---|---|
+| TC-001 | Home page loads with heading | FR-1 | `@smoke @regression` |
+| TC-002 | Guest greeting when input is empty | FR-3, FR-4, FR-6, FR-7 | `@smoke @regression` |
+| TC-003 | Personalized greeting when input has name | FR-2, FR-3, FR-5, FR-6, FR-7 | `@regression` |
+| TC-004 | Personalized greeting is saved to the database | FR-7, FR-8, FR-9 | `@regression @db` |
+| TC-005 | Guest greeting is saved to the database | FR-7, FR-8, FR-9 | `@regression @db` |
+| TC-N01 | Intentional failure for demo | — | `@negative` |
 
-These scenario IDs match the documented test cases in `docs/ui-test-cases.md`.
+Scenario IDs match the documented test cases in `docs/ui-test-cases.md`.
 
 ### Execution flow
 
@@ -412,8 +448,13 @@ This section explains what was added and why.
 2. Added MySQL schema setup in `db/init.sql`.
 3. Added Docker setup in `docker-compose.yml` for local MySQL.
 4. Updated `demo-app/script.js` to call `/api/greet` instead of generating greeting only in the browser.
-5. Added Playwright DB tests in `tests/ui.db.spec.js` that verify both UI text and actual MySQL rows.
+5. Added Playwright DB tests in `tests/ui.db.spec.js` that verify both UI text and actual MySQL rows (TC-004, TC-005).
 6. Updated Playwright and Cucumber server startup to use `node server.js`.
+7. Added new functional requirements: FR-7 (API endpoint), FR-8 (persistence), FR-9 (record structure) — documented in `docs/app-requirements.md`.
+8. Added TC-004 and TC-005 to `docs/ui-test-cases.md` with full step-by-step coverage.
+9. Added TC-004 (`@regression @db`) and TC-005 (`@regression @db`) Cucumber scenarios to `features/greeting.feature`.
+10. Added new Cucumber step definitions: `Given the greetings table is empty`, `Then the latest greeting in the database should have name {string}`, `Then the latest greeting in the database should be for a guest`.
+11. Renamed the previous `TC-004 Intentional failure` scenario to `TC-N01` (tagged `@negative`) to free the TC-004 slot for the new DB test.
 
 ### Why this is useful
 
@@ -519,5 +560,7 @@ This regression command runs scenarios tagged `@regression` and excludes scenari
 
 - Cucumber hooks start the demo app server on port `4173` if it is not already running.
 - Browser automation is performed with Playwright Chromium.
-- Tags are included in `features/greeting.feature` (`@smoke`, `@regression`) for selective execution.
-- The intentional failing demo scenario is tagged `@negative`.
+- Tags allow selective execution: `@smoke`, `@regression`, `@db`, `@negative`.
+- The `@db` tag marks scenarios that require MySQL — run `npm run db:up` before using them.
+- TC-004 and TC-005 are tagged `@db` and use `clearGreetings()` and `getLatestGreeting()` from `tests/db-client.js` to verify MySQL persistence.
+- The intentional failing demo scenario is tagged `@negative` and renamed `TC-N01` to avoid conflicting with the DB test case `TC-004`.
