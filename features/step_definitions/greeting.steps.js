@@ -1,5 +1,5 @@
 const { Given, When, Then } = require("@cucumber/cucumber");
-const assert = require("node:assert/strict");
+const { expect } = require("@playwright/test");
 
 Given("the demo app is open", async function () {
   const title = this.page.locator("#title");
@@ -15,11 +15,9 @@ When("I enter the name {string}", async function (name) {
 });
 
 Then("I should see the heading {string}", async function (expectedHeading) {
-  const headingText = await this.page.locator("#title").innerText();
-  assert.equal(headingText.trim(), expectedHeading);
+  await expect(this.page.locator("#title")).toHaveText(expectedHeading);
 });
 
 Then("I should see greeting output {string}", async function (expectedGreeting) {
-  const outputText = await this.page.locator("#greeting-output").innerText();
-  assert.equal(outputText.trim(), expectedGreeting);
+  await expect(this.page.locator("#greeting-output")).toHaveText(expectedGreeting);
 });

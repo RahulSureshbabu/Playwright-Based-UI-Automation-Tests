@@ -2,7 +2,6 @@ const { BeforeAll, AfterAll, Before, After, setDefaultTimeout } = require("@cucu
 const { chromium } = require("playwright");
 const { spawn } = require("child_process");
 const http = require("http");
-const path = require("path");
 
 const BASE_URL = "http://127.0.0.1:4173";
 
@@ -30,7 +29,7 @@ function checkServerUp() {
 async function waitForServer(timeoutMs) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
-    // Poll until the static server starts accepting requests.
+    // Poll until the app server starts accepting requests.
     if (await checkServerUp()) {
       return;
     }
@@ -42,15 +41,7 @@ async function waitForServer(timeoutMs) {
 BeforeAll(async () => {
   const isRunning = await checkServerUp();
   if (!isRunning) {
-    const httpServerBin = path.join(
-      process.cwd(),
-      "node_modules",
-      "http-server",
-      "bin",
-      "http-server"
-    );
-
-    serverProcess = spawn(process.execPath, [httpServerBin, "demo-app", "-p", "4173", "-c-1"], {
+    serverProcess = spawn(process.execPath, ["server.js"], {
       cwd: process.cwd(),
       stdio: "ignore"
     });

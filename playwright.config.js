@@ -23,7 +23,7 @@ module.exports = defineConfig({
     }
   ],
   webServer: {
-    command: "node ./node_modules/http-server/bin/http-server demo-app -p 4173 -c-1",
+    command: "node server.js",
     port: 4173,
     reuseExistingServer: !process.env.CI,
     timeout: 120000
