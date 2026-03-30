@@ -1,6 +1,6 @@
 # UI Testing Project with Playwright, Cucumber, and MySQL
 
-A beginner-friendly UI automation project in this repository.
+A simple UI automation project.
 
 ## Repository Description
 
@@ -438,7 +438,7 @@ That means Gherkin is the readable specification, but the JavaScript step defini
 
 ---
 
-## 13) MySQL Enhancement Summary (Beginner Friendly)
+## 13) MySQL Enhancement Summary 
 
 This section explains what was added and why.
 
@@ -491,7 +491,7 @@ Stop local DB when done:
 npm run db:down
 ```
 
-### Roles a tester can play with Cucumber
+### What can be done with Cucumber?
 
 A tester can contribute at multiple levels depending on technical depth:
 
@@ -502,11 +502,9 @@ A tester can contribute at multiple levels depending on technical depth:
 
 So a tester does not have to only use Gherkin. A non-technical tester may work mostly in feature files, but a technical tester or SDET often writes both Gherkin and the underlying automation code.
 
-### Who writes the underlying code?
+### Underlying code
 
-Gherkin alone is not executable. Someone must implement the step definitions and automation code.
-
-Common team models are:
+Gherkin alone is not executable. Step definitions and automation code must be implemented.
 
 1. Manual tester or BA writes Gherkin, and an automation tester/SDET writes the step definitions.
 2. Tester and developer collaborate, with the developer implementing some or all step definitions.
@@ -518,7 +516,6 @@ In this repository, the underlying executable code is mainly:
 - `features/support/hooks.js` for setup and teardown
 - `features/support/world.js` for shared scenario state
 
-### What a newbie tester should learn first
 
 If you are new to Cucumber, the most useful order is:
 
